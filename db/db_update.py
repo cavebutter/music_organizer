@@ -5,7 +5,8 @@ from loguru import logger
 import csv
 import json
 
-database = Database(DB_PATH, DB_USER, DB_PASSWORD, DB_DATABASE)
+# TODO change databsae for production
+database = Database(DB_PATH, DB_USER, DB_PASSWORD, TEST_DB)
 
 
 def process_bpm(database: Database, track_list: csv):
