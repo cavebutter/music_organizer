@@ -29,6 +29,7 @@ def get_bpm(audio_file):
             return None
         bpm = librosa.beat.beat_track(y=y, sr=sr)[0]
         bpm = int(bpm)
+        logger.info(f"Calculated BPM: {bpm} for {audio_file}")
         return bpm
     except sf.LibsndfileError as e:
         logger.error(f"PySoundFile error: {e}")

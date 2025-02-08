@@ -34,7 +34,7 @@ def process_bpm(database: Database, track_list: csv):
             # Above only applies to Neptune server. Change as needed.
             track_bpm = bpm.get_bpm(file_location)
             database.execute_query("UPDATE track_data SET bpm = %s WHERE id = %s", (track_bpm, row['id']))
-            logger.info(f"Processed BPM for {row['woodstock_id']}; {i} of {lib_size}")
+            logger.debug(f"Processed BPM for {row['woodstock_id']}; {i} of {lib_size}")
             i += 1
     database.close()
 
