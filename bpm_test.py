@@ -8,4 +8,4 @@ def configure_logging():
 
 if __name__ == '__main__':
     configure_logging()
-    dbu.process_bpm(dbu.database, 'output/test_track_data2.csv')
+    dbu.process_bpm(dbu.database, 'output/test_id_location.csv')
