@@ -3,6 +3,20 @@ from loguru import logger
 import sys
 
 
+create_table_methods = []
+
+
+def register_create_table_method(func):
+    """
+    A decorator function that registers a function to create a table in the database.
+
+    Parameters
+    ----------
+    func : function
+        the function to register
+    """
+    create_table_methods.append(func)
+    return func
 class Database:
     """
     A class used to represent a connection to a MySQL database.
@@ -157,6 +171,15 @@ class Database:
         finally:
             return result
 
+
+    def create_all_tables(self):
+        """
+        Creates all tables in the database.
+        """
+        for method in create_table_methods:
+            method(self)
+
+    @register_create_table_method
     def create_artists_table(self, table_name="artists"):
         """
         Creates the artists table in the database.
@@ -178,6 +201,7 @@ class Database:
         self.create_table(artists_ddl)
         self.execute_query("SET FOREIGN_KEY_CHECKS = 1")
 
+    @register_create_table_method
     def create_track_data_table(self, table_name="track_data"):
         """
         Creates the track_data table in the database.
@@ -213,6 +237,7 @@ class Database:
         self.execute_query(ix_bpm)
         self.execute_query("SET FOREIGN_KEY_CHECKS = 1")
 
+    @register_create_table_method
     def create_history_table(self, table_name="history"):
         """
         Creates the history table in the database.
@@ -232,6 +257,7 @@ class Database:
         self.create_table(history_ddl)
         self.execute_query("SET FOREIGN_KEY_CHECKS = 1")
 
+    @register_create_table_method
     def create_tags_table(self):
         """
         Creates the tags table in the database.
@@ -249,6 +275,7 @@ class Database:
         self.create_table(tags_ddl)
         self.execute_query("SET FOREIGN_KEY_CHECKS = 1")
 
+    @register_create_table_method
     def create_similar_artists_table(self):
         """
         Creates the similar_artists table in the database.
@@ -265,6 +292,7 @@ class Database:
         self.create_table(similar_artists_ddl)
         self.execute_query("SET FOREIGN_KEY_CHECKS = 1")
 
+    @register_create_table_method
     def create_genres_table(self):
         """
         Creates the genres table in the database.
@@ -278,4 +306,24 @@ class Database:
         )
         '''
         self.create_table(genres_ddl)
+        self.execute_query("SET FOREIGN_KEY_CHECKS = 1")
+
+
+    @register_create_table_method
+    def create_track_genres_table(self):
+        """
+        Creates the track_genres table in the database.
+        """
+        self.execute_query("SET FOREIGN_KEY_CHECKS = 0")
+        self.drop_table('track_genres')
+        track_genres_ddl = '''
+        CREATE TABLE IF NOT EXISTS track_genres(
+        id INTEGER PRIMARY KEY AUTO_INCREMENT
+        , track_id INTEGER
+        , genre_id INTEGER
+        , FOREIGN KEY (track_id) REFERENCES track_data(id) ON DELETE CASCADE
+        , FOREIGN KEY (genre_id) REFERENCES genres(id) ON DELETE CASCADE
+        )
+        '''
+        self.create_table(track_genres_ddl)
         self.execute_query("SET FOREIGN_KEY_CHECKS = 1")

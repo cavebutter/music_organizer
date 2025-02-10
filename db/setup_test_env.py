@@ -19,11 +19,4 @@ if __name__ == '__main__':
     cxn.drop_table("track_data")
     cxn.drop_table("similar_artists")
     cxn.drop_table("artists")
-
-    cxn.create_genres_table()
-    cxn.create_history_table()
-    cxn.create_artists_table()
-    cxn.create_tags_table()
-    cxn.create_similar_artists_table()
-    cxn.create_track_data_table()
-    #cxn.execute_query("INSERT INTO artists (artist) VALUES ('Jethro Tull')")
+    cxn.drop_table("track_genres")
