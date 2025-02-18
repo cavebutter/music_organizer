@@ -5,6 +5,8 @@ from loguru import logger
 import csv
 import json
 import re
+from time import sleep
+import analysis.lastfm as lastfm
 
 # TODO change databsae for production
 database = Database(DB_PATH, DB_USER, DB_PASSWORD, TEST_DB)
@@ -148,3 +150,74 @@ def update_track_genre_table(database: Database, cutoff: str = None):
     database.close()
     logger.debug("Finished updating track genre table.")
     return None
+
+
+def get_artists_from_db(database: Database):
+    """
+    Get all artists from artists table in the database. Return a list of artist names.
+    :param database:
+    :return:
+    """
+    logger.debug("Starting to get artists from db.")
+    database.connect()
+    query = "SELECT artist FROM artists"
+    results = database.execute_select_query(query)
+    artist_list = [result[0] for result in results]
+    database.close()
+    logger.debug("Finished getting artists from db.")
+    return artist_list
+
+
+def check_mbid_and_insert(database: Database, lastfm_json: json, mbid_list: list):
+    """
+    Check if the MBID is in the database and insert it in artists.musicbrainz_id if it is not.
+    :param database:
+    :param lastfm_json:
+    :param mbid_list:
+    :return:
+    """
+    database.connect()
+    mbid = lastfm.get_mbid(lastfm_json)
+    if mbid not in mbid_list:
+        artist = lastfm_json['artist']['name']
+        database.execute_query("UPDATE artists SET musicbrainz_id = %s WHERE artist = %s", (mbid, artist))
+        logger.info(f"Inserted MBID for {artist}: {mbid}")
+
+
+def check_tags_and_insert(database: Database, lastfm_json: json, genre_list: list):
+    """
+    Check if the tags are in the database and insert them in genres if they are not.
+    :param database:
+    :param lastfm_json:
+    :param genre_list:
+    :return:
+    """
+    database.connect()
+    tags = lastfm.get_tags(lastfm_json)
+    for tag in tags:
+        if tag not in genre_list:
+            database.execute_query("INSERT INTO genres (genre) VALUES (%s)", (tag,))
+            logger.info(f"Inserted new genre: {tag}")
+    database.close()
+
+
+def insert_last_fm_data(database: Database, artist_list: list):
+    logger.debug("Starting to insert Last.fm data into db.")
+    database.connect()
+    mbid_list = lastfm.get_current_mbids_from_db(database)
+    genre_list = lastfm.get_genres_from_db(database)
+    processed_artists = set(artist_list)  # Track processed artists to avoid duplicates
+
+    for artist in artist_list:
+        artist_info = lastfm.get_artist_info(artist)
+        if artist_info:
+            check_mbid_and_insert(database, artist_info, mbid_list)
+            check_tags_and_insert(database, artist_info, genre_list)
+            similar_artists = lastfm.get_similar_artists(artist_info)
+            for similar_artist in similar_artists:
+                if similar_artist[0] not in processed_artists:
+                    database.execute_query("INSERT INTO artists (artist) VALUES (%s)", (similar_artist[0],))
+                    logger.info(f"Inserted similar artist: {similar_artist[0]}")
+                    processed_artists.add(similar_artist[0])
+            sleep(5)
+    database.close()

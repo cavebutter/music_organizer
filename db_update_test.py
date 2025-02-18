@@ -7,6 +7,8 @@ import db.db_functions as dbf
 import db.db_update as dbu
 from loguru import logger
 import sys
+import analysis.lastfm as lfm
+from time import sleep
 
 
 # Configure logging
@@ -14,12 +16,11 @@ logger.remove()
 logger.add(sys.stdout, level="DEBUG")
 logger.add("logs/db_update_test.log", rotation="10 MB", level="DEBUG")
 
-
-# Run setup_test_env to create fresh test db
-subprocess.run(['python3', 'db/setup_test_env.py'])
-
-database = dbf.database
+database = dbu.database
 database.connect()
+
+#drop tables
+database.drop_all_tables()
 
 # Create tables
 database.create_all_tables()
@@ -35,3 +36,8 @@ dbf.populate_artist_id_column(dbf.database)
 genre_list = dbu.populate_genres_table_from_track_data(database)
 dbu.insert_genres_if_not_exists(database, genre_list)
 dbu.populate_track_genre_table(database)
+
+# Get last.fm data
+artists = dbu.get_artists_from_db(database)
+for artist in artists:
+    dbu.insert_last_fm_data(database, artists)

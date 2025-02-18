@@ -327,3 +327,35 @@ class Database:
         '''
         self.create_table(track_genres_ddl)
         self.execute_query("SET FOREIGN_KEY_CHECKS = 1")
+
+
+    @register_create_table_method
+    def create_artist_tags_table(self):
+        """
+        Creates the artist_tags table in the database.
+        """
+        self.execute_query("SET FOREIGN_KEY_CHECKS = 0")
+        self.drop_table('artist_tags')
+        artist_tags_ddl = '''
+        CREATE TABLE IF NOT EXISTS artist_tags(
+        id INTEGER PRIMARY KEY AUTO_INCREMENT
+        , artist_id INTEGER
+        , tag_id INTEGER
+        , FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE
+        , FOREIGN KEY (tag_id) REFERENCES genres(id) ON DELETE CASCADE
+        )
+        '''
+        self.create_table(artist_tags_ddl)
+        self.execute_query("SET FOREIGN_KEY_CHECKS = 1")
+
+    def drop_all_tables(self):
+        """
+        Drops all tables in the database.
+        """
+        self.connect()
+        self.execute_query("SET FOREIGN_KEY_CHECKS = 0")
+        for method in create_table_methods:
+            table_name = method.__name__.replace('create_', '').replace('_table', '')
+            self.drop_table(table_name)
+        self.execute_query("SET FOREIGN_KEY_CHECKS = 1")
+        self.close()

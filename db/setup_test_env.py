@@ -20,3 +20,4 @@ if __name__ == '__main__':
     cxn.drop_table("similar_artists")
     cxn.drop_table("artists")
     cxn.drop_table("track_genres")
+    cxn.close()
