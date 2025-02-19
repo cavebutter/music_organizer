@@ -4,3 +4,5 @@ config.ini
 !/output/.gitignore
 /logs/*
 /.pytest_cache
+.idea
+__pycache__
