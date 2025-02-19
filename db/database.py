@@ -257,23 +257,23 @@ class Database:
         self.create_table(history_ddl)
         self.execute_query("SET FOREIGN_KEY_CHECKS = 1")
 
-    @register_create_table_method
-    def create_tags_table(self):
-        """
-        Creates the tags table in the database.
-        """
-        self.execute_query("SET FOREIGN_KEY_CHECKS = 0")
-        self.drop_table("tags")
-        tags_ddl = '''
-        CREATE TABLE IF NOT EXISTS tags(
-        id INTEGER PRIMARY KEY AUTO_INCREMENT
-        , tag INTEGER (6)
-        , artist_id INTEGER
-
-        , FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE
-        , FOREIGN KEY (tag) REFERENCES genres(id) ON DELETE CASCADE)'''
-        self.create_table(tags_ddl)
-        self.execute_query("SET FOREIGN_KEY_CHECKS = 1")
+    # @register_create_table_method
+    # def create_tags_table(self):
+    #     """
+    #     Creates the tags table in the database.
+    #     """
+    #     self.execute_query("SET FOREIGN_KEY_CHECKS = 0")
+    #     self.drop_table("tags")
+    #     tags_ddl = '''
+    #     CREATE TABLE IF NOT EXISTS tags(
+    #     id INTEGER PRIMARY KEY AUTO_INCREMENT
+    #     , tag INTEGER (6)
+    #     , artist_id INTEGER
+    #
+    #     , FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE
+    #     , FOREIGN KEY (tag) REFERENCES genres(id) ON DELETE CASCADE)'''
+    #     self.create_table(tags_ddl)
+    #     self.execute_query("SET FOREIGN_KEY_CHECKS = 1")
 
     @register_create_table_method
     def create_similar_artists_table(self):
@@ -330,22 +330,22 @@ class Database:
 
 
     @register_create_table_method
-    def create_artist_tags_table(self):
+    def create_artist_genres_table(self):
         """
-        Creates the artist_tags table in the database.
+        Creates the artist_genres table in the database.
         """
         self.execute_query("SET FOREIGN_KEY_CHECKS = 0")
-        self.drop_table('artist_tags')
-        artist_tags_ddl = '''
-        CREATE TABLE IF NOT EXISTS artist_tags(
+        self.drop_table('artist_genres')
+        artist_genres_ddl = '''
+        CREATE TABLE IF NOT EXISTS artist_genres(
         id INTEGER PRIMARY KEY AUTO_INCREMENT
         , artist_id INTEGER
-        , tag_id INTEGER
+        , genre_id INTEGER
         , FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE
-        , FOREIGN KEY (tag_id) REFERENCES genres(id) ON DELETE CASCADE
+        , FOREIGN KEY (genre_id) REFERENCES genres(id) ON DELETE CASCADE
         )
         '''
-        self.create_table(artist_tags_ddl)
+        self.create_table(artist_genres_ddl)
         self.execute_query("SET FOREIGN_KEY_CHECKS = 1")
 
     def drop_all_tables(self):

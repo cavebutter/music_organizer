@@ -7,6 +7,7 @@ import json
 import re
 from time import sleep
 import analysis.lastfm as lastfm
+import pdb
 
 # TODO change databsae for production
 database = Database(DB_PATH, DB_USER, DB_PASSWORD, TEST_DB)
@@ -185,39 +186,71 @@ def check_mbid_and_insert(database: Database, lastfm_json: json, mbid_list: list
 
 
 def check_tags_and_insert(database: Database, lastfm_json: json, genre_list: list):
-    """
-    Check if the tags are in the database and insert them in genres if they are not.
-    :param database:
-    :param lastfm_json:
-    :param genre_list:
-    :return:
-    """
     database.connect()
     tags = lastfm.get_tags(lastfm_json)
     for tag in tags:
-        if tag not in genre_list:
+        if tag.lower() not in [g.lower() for g in genre_list]:  # Case-insensitive check
             database.execute_query("INSERT INTO genres (genre) VALUES (%s)", (tag,))
             logger.info(f"Inserted new genre: {tag}")
+            genre_list.append(tag)  # Add to list to prevent duplicates
     database.close()
 
 
-def insert_last_fm_data(database: Database, artist_list: list):
+def insert_last_fm_data(database: Database):
     logger.debug("Starting to insert Last.fm data into db.")
     database.connect()
-    mbid_list = lastfm.get_current_mbids_from_db(database)
-    genre_list = lastfm.get_genres_from_db(database)
-    processed_artists = set(artist_list)  # Track processed artists to avoid duplicates
-
-    for artist in artist_list:
-        artist_info = lastfm.get_artist_info(artist)
-        if artist_info:
-            check_mbid_and_insert(database, artist_info, mbid_list)
-            check_tags_and_insert(database, artist_info, genre_list)
-            similar_artists = lastfm.get_similar_artists(artist_info)
-            for similar_artist in similar_artists:
-                if similar_artist[0] not in processed_artists:
-                    database.execute_query("INSERT INTO artists (artist) VALUES (%s)", (similar_artist[0],))
-                    logger.info(f"Inserted similar artist: {similar_artist[0]}")
-                    processed_artists.add(similar_artist[0])
+    try:
+        artists = database.execute_select_query("SELECT id, artist FROM artists")
+        for artist_id, artist_name in artists:
             sleep(5)
-    database.close()
+            artist_info = lastfm.get_artist_info(artist_name)
+            if not artist_info:
+                logger.error(f"Failed to retrieve artist info for {artist_name}")
+                continue
+
+            mbid = lastfm.get_mbid(artist_info)
+            logger.debug(f"MBID for {artist_name}: {mbid}")
+
+            if mbid:
+                database.execute_query("UPDATE artists SET musicbrainz_id = %s WHERE id = %s", (mbid, artist_id))
+
+
+            genres = lastfm.get_tags(artist_info)
+            for genre in genres:
+                genre = genre.lower()
+                # Insert genre if not exists
+                database.execute_query("INSERT IGNORE INTO genres (genre) VALUES (%s)", (genre,))
+                logger.info(f"Inserted genre: {genre}")
+
+                # Get genre ID
+                genre_id = database.execute_select_query("SELECT id FROM genres WHERE genre = %s", (genre,))[0][0]
+                logger.debug(f"Genre ID for {genre}: {genre_id}")
+
+                # Insert genre relationship
+                database.execute_query("INSERT INTO artist_genres (artist_id, genre_id) VALUES (%s, %s)", (artist_id, genre_id))
+                logger.info(f"Inserted genre relationship: {artist_name} -> {genre}")
+
+
+            similar_artists = lastfm.get_similar_artists(artist_info)
+            logger.debug(f"Similar artists for {artist_name}: {similar_artists}")
+
+            for similar_artist in similar_artists:
+                if similar_artist:
+                    # Insert similar artist if not exists
+                    database.execute_query("INSERT IGNORE INTO artists (artist) VALUES (%s)", (similar_artist,))
+                    logger.info(f"Inserted similar artist: {similar_artist}")
+
+                    # Get similar artist ID
+                    similar_artist_id = database.execute_select_query("SELECT id FROM artists WHERE artist = %s", (similar_artist,))[0][0]
+                    logger.debug(f"Similar artist ID for {similar_artist}: {similar_artist_id}")
+
+                    # Insert similar artist relationship
+                    database.execute_query("INSERT INTO similar_artists (artist_id, similar_artist_id) VALUES (%s, %s)", (artist_id, similar_artist_id))
+                    logger.info(f"Inserted similar artist relationship: {artist_name} -> {similar_artist}")
+                    sleep(1)
+    except Exception as e:
+        logger.error(f"Error inserting Last.fm data: {e}")
+        raise e
+    finally:
+        database.close()
+    logger.debug("Finished inserting Last.fm data into db.")

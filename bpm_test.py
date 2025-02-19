@@ -1,3 +1,5 @@
+# This script is to be used on a different machine with local access to music library
+
 import db.db_update as dbu
 from loguru import logger
 import sys

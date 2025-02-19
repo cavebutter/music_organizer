@@ -29,6 +29,7 @@ def get_artist_info(artist_name):
     url = f'http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist={artist_name}&api_key={LASTFM_API_KEY}&format=json'
     response = requests.get(url)
     if response.status_code == 200:
+        logger.debug(f"last_fm Response: {response.json()}")
         logger.info(f"Retrieved artist info for {artist_name}")
         return response.json()
     else:
@@ -75,25 +76,30 @@ def get_tags(result: json):
         return []
 
 
-def get_similar_artists(result: json):
-    """
-    Retrieves similar artists from the given JSON `result` object and returns them as a list of tuples.
+def get_similar_artists(result):
+    """Extract similar artists from Last.fm API response.
 
-    Parameters:
-    result (json): The JSON object containing artist information.
+    Args:
+        result (dict): Last.fm API response containing artist info
 
     Returns:
-    list: A list of tuples containing the name and MusicBrainz ID (MBID) of similar artists.
+        list: List of similar artist names
     """
     try:
-        similar_artists = result['artist']['similar']['artist']
-        similar_list = [(artist['name'], artist['mbid']) for artist in similar_artists]
-        logger.info(f"Retrieved similar artists for {result['artist']['name']}: {similar_list}")
-        return similar_list
-    except (KeyError, TypeError) as e:
+        similar_artists = []
+        if 'artist' in result and 'similar' in result['artist']:
+            for artist in result['artist']['similar']['artist']:
+                similar_artists.append(artist['name'])
+        return similar_artists
+
+    except Exception as e:
         logger.error(f"Failed to retrieve similar artists for {result['artist']['name']}: {e}")
         return []
-
+    # try:
+    #     similar_artists = result.get('similar', {}).get('artist', [])
+    #     return [artist.get('name') for artist in similar_artists]
+    # except (KeyError, AttributeError):
+    #     return []
 
 def get_current_mbids_from_db(database: Database):
     """
@@ -107,7 +113,7 @@ def get_current_mbids_from_db(database: Database):
     """
     logger.debug("Starting to get MBIDs from db.")
     database.connect()
-    query = "SELECT mbid FROM artists"
+    query = "SELECT musicbrainz_id FROM artists"
     results = database.execute_select_query(query)
     mbid_list = [result[0] for result in results]
     database.close()

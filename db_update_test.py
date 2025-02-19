@@ -2,7 +2,6 @@
 # It duplicates the functionality of db_test.py, but with the addition update functions.
 # We run this after we are satisfied with the results of db_test.py.
 
-import subprocess
 import db.db_functions as dbf
 import db.db_update as dbu
 from loguru import logger
@@ -38,6 +37,5 @@ dbu.insert_genres_if_not_exists(database, genre_list)
 dbu.populate_track_genre_table(database)
 
 # Get last.fm data
-artists = dbu.get_artists_from_db(database)
-for artist in artists:
-    dbu.insert_last_fm_data(database, artists)
+# artists = dbu.get_artists_from_db(database)
+dbu.insert_last_fm_data(database)  # Pass list once
