@@ -1,3 +1,5 @@
+from os import WCONTINUED
+
 from . import DB_PATH, DB_USER, DB_PASSWORD, DB_DATABASE, DB_PORT, TEST_DB
 from .database import Database
 from analysis import bpm
@@ -178,7 +180,7 @@ def check_mbid_and_insert(database: Database, lastfm_json: json, mbid_list: list
     :return:
     """
     database.connect()
-    mbid = lastfm.get_mbid(lastfm_json)
+    mbid = lastfm.get_artist_mbid(lastfm_json)
     if mbid not in mbid_list:
         artist = lastfm_json['artist']['name']
         database.execute_query("UPDATE artists SET musicbrainz_id = %s WHERE artist = %s", (mbid, artist))
@@ -187,7 +189,7 @@ def check_mbid_and_insert(database: Database, lastfm_json: json, mbid_list: list
 
 def check_tags_and_insert(database: Database, lastfm_json: json, genre_list: list):
     database.connect()
-    tags = lastfm.get_tags(lastfm_json)
+    tags = lastfm.get_artist_tags(lastfm_json)
     for tag in tags:
         if tag.lower() not in [g.lower() for g in genre_list]:  # Case-insensitive check
             database.execute_query("INSERT INTO genres (genre) VALUES (%s)", (tag,))
@@ -196,7 +198,7 @@ def check_tags_and_insert(database: Database, lastfm_json: json, genre_list: lis
     database.close()
 
 
-def insert_last_fm_data(database: Database):
+def insert_last_fm_artist_data(database: Database):
     logger.debug("Starting to insert Last.fm data into db.")
     database.connect()
 
@@ -212,7 +214,7 @@ def insert_last_fm_data(database: Database):
                     continue
 
                 # Update MusicBrainz ID if available
-                mbid = lastfm.get_mbid(artist_info)
+                mbid = lastfm.get_artist_mbid(artist_info)
                 if mbid:
                     logger.debug(f"MBID for {artist_name}: {mbid}")
                     database.execute_query(
@@ -221,7 +223,7 @@ def insert_last_fm_data(database: Database):
                     )
 
                 # Process genres
-                genres = lastfm.get_tags(artist_info)
+                genres = lastfm.get_artist_tags(artist_info)
                 for genre in genres:
                     genre = genre.lower()
                     try:
@@ -307,3 +309,64 @@ def insert_last_fm_data(database: Database):
         database.close()
 
     logger.debug("Finished inserting Last.fm data into db.")
+
+
+def insert_lastfm_track_data(database: Database, db_track_data: tuple[int, str, str]):
+    """
+    Take db track data (id, artist name, track name) and retrieve lastfm data for each track.
+    Insert mbid into track_data table.
+    Insert genres into track_genres table.  If genre does not exist, insert into genres table, then create relationship.
+    Args:
+        database:
+        db_track_data:
+
+    Returns:
+
+    """
+    database.connect()
+    try:
+        lfm_track_data = lastfm.get_last_fm_track_data(db_track_data[1], db_track_data[2])
+        if lfm_track_data:
+            logger.debug(f"Received Last.fm data for {db_track_data[2]}: {lfm_track_data}")
+            track_mbid = lastfm.get_track_mbid(lfm_track_data)
+            if track_mbid:
+                database.execute_query("UPDATE track_data SET musicbrainz_id = %s WHERE id = %s", (track_mbid, db_track_data[0]))
+                logger.info(f"Inserted MBID for {db_track_data[2]}: {track_mbid}")
+
+                track_genres = lastfm.get_track_tags(lfm_track_data)
+                # Insert genres if not exists
+                for genre in track_genres:
+                    genre = genre.lower()
+                    try:
+                        # Insert genre if not exists using WHERE NOT EXISTS
+                        database.execute_query("""
+                            INSERT INTO genres (genre)
+                            SELECT %s
+                            WHERE NOT EXISTS (
+                                SELECT 1 FROM genres 
+                                WHERE LOWER(genre) = LOWER(%s)
+                            )
+                        """, (genre, genre))
+
+                        # Get genre ID
+                        genre_id = database.execute_select_query(
+                            "SELECT id FROM genres WHERE LOWER(genre) = LOWER(%s)",
+                            (genre,)
+                        )[0][0]
+
+                        # Insert genre relationship if not exists
+                        database.execute_query("""
+                            INSERT INTO track_genres (track_id, genre_id)
+                            SELECT %s, %s
+                            WHERE NOT EXISTS (
+                                SELECT 1 FROM track_genres
+                                WHERE track_id = %s AND genre_id = %s
+                            )
+                        """, (db_track_data[0], genre_id, db_track_data[0], genre_id))
+
+                        logger.info(f"Processed genre for {db_track_data[2]}: {genre}")
+                    except Exception as e:
+                        logger.error(f"Error processing genre {genre} for {db_track_data[2]}: {e}")
+    except Exception as e:
+        logger.error(f"Error processing track {db_track_data[2]}: {e}")
+

@@ -36,6 +36,12 @@ genre_list = dbu.populate_genres_table_from_track_data(database)
 dbu.insert_genres_if_not_exists(database, genre_list)
 dbu.populate_track_genre_table(database)
 
-# Get last.fm data
+# Get last.fm artist data
 # artists = dbu.get_artists_from_db(database)
-dbu.insert_last_fm_data(database)  # Pass list once
+dbu.insert_last_fm_artist_data(database)  # Pass list once
+
+# Get last.fm track data
+tracks = lfm.get_track_list_from_db(database)
+for track in tracks:
+    sleep(2)
+    dbu.insert_lastfm_track_data(database, track)

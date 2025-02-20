@@ -227,6 +227,7 @@ class Database:
         , artist_id INTEGER
         , woodstock_id INTEGER
         , schroeder_id INTEGER
+        , musicbrainz_id VARCHAR(255)
         , FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE)'''
         self.create_table(track_data_ddl)
         ix_loc = '''CREATE INDEX ix_loc ON track_data (location)'''

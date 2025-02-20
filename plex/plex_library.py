@@ -74,6 +74,7 @@ def get_all_tracks_limit(music_library, limit=50):
 
 
 def extract_track_data(track, server_name: str, filepath_prefix: str):
+   #  TODO: This does not handle Various Artist albums well. Need to fix this.
     """
     Extract Plex track data from a track object. Return a dict with selected data
     along with a server_id for ratingKey and a stripped filepath.

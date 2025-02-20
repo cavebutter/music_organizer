@@ -26,7 +26,7 @@ def get_artist_info(artist_name):
     Returns:
     dict: A JSON object containing information about the artist if the request is successful, otherwise None.
     """
-    url = f'http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist={artist_name}&api_key={LASTFM_API_KEY}&format=json'
+    url = f'http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&autocorrect=1&artist={artist_name}&api_key={LASTFM_API_KEY}&format=json'
     response = requests.get(url)
     if response.status_code == 200:
         logger.debug(f"last_fm Response: {response.json()}")
@@ -37,7 +37,7 @@ def get_artist_info(artist_name):
         return None
 
 
-def get_mbid(result: json):
+def get_artist_mbid(result: json):
     """
     Retrieves the MusicBrainz ID (MBID) of the artist from the given JSON `result` object.
 
@@ -56,7 +56,7 @@ def get_mbid(result: json):
         return None
 
 
-def get_tags(result: json):
+def get_artist_tags(result: json):
     """
     Retrieves the tags from the given JSON `result` object.
 
@@ -139,3 +139,89 @@ def get_genres_from_db(database: Database):
     database.close()
     logger.debug("Finished getting genres from db.")
     return genre_list
+
+
+def get_last_fm_track_data(artist: str, track: str):
+    # NOTE this does not cover cases where an artist records multiple tracks with the same name.
+    # Last.fm API only returns a single artist/track pair.
+    """
+    Retrieves information about a specific track from the Last.fm API.
+
+    Parameters:
+    artist (str): The name of the artist.
+    track (str): The name of the track.
+
+    Returns:
+    dict: A JSON object containing information about the track if the request is successful, otherwise None.
+    """
+    url = f'http://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key={LASTFM_API_KEY}&artist={artist}&track={track}&autocorrect=1&format=json'
+    response = requests.get(url)
+    if response.status_code == 200:
+        logger.debug(f"last_fm Response: {response.json()}")
+        logger.info(f"Retrieved track info for {artist} - {track}")
+        return response.json()
+    else:
+        logger.error(f"Failed to retrieve track info for {artist} - {track}")
+        return None
+
+
+
+def get_track_mbid(result: json):
+    """
+    Retrieves the MusicBrainz ID (MBID) of the track from the given JSON `result` object.
+
+    Parameters:
+    result (json): The JSON object containing track information.
+
+    Returns:
+    str: The MusicBrainz ID (MBID) of the track, or None if the MBID is not found.
+    """
+    try:
+        mbid = result['track']['mbid']
+        logger.info(f"Retrieved MBID for {result['track']['name']}: {mbid}")
+        return mbid
+    except (KeyError, TypeError) as e:
+        logger.error(f"Failed to retrieve MBID for {result['track']['name']}: {e}")
+        return None
+
+
+def get_track_tags(result: json):
+    """
+    Retrieves the tags from the given JSON `result` object.
+
+    Parameters:
+    result (json): The JSON object containing track information.
+
+    Returns:
+    list: A list of tags associated with the track, or an empty list if no tags are found.
+    """
+    try:
+        tags = result['track']['toptags']['tag']
+        tag_list = [tag['name'] for tag in tags]
+        logger.info(f"Retrieved tags for {result['track']['name']}: {tag_list}")
+        return tag_list
+    except (KeyError, TypeError) as e:
+        logger.error(f"Failed to retrieve tags for {result['track']['name']}: {e}")
+        return []
+
+
+def get_track_list_from_db(database: Database):
+    """
+    Get all tracks from the tracks table in the database.
+
+    Parameters:
+    database (Database): The database object to query.
+
+    Returns:
+    list: A list of tracks from the database.
+    """
+    logger.debug("Starting to get tracks from db.")
+    database.connect()
+    query = """SELECT td.id, a.artist, td.title
+    FROM track_data td
+    INNER JOIN artists a ON td.artist_id = a.id"""
+    results = database.execute_select_query(query)
+    track_list = [(result[0], result[1], result[2]) for result in results]
+    database.close()
+    logger.debug("Finished getting tracks from db.")
+    return track_list
