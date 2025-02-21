@@ -3,9 +3,12 @@ from loguru import logger
 import os
 import soundfile as sf
 import warnings
+import audioread
+import numpy as np
 
 # Suppress audioread deprecation warnings in stdout
 warnings.filterwarnings("ignore", category=DeprecationWarning, module='audioread')
+
 
 def get_bpm(audio_file):
     """
@@ -15,31 +18,39 @@ def get_bpm(audio_file):
     audio_file (str): The path to the audio file.
 
     Returns:
-    float: The BPM value calculated from the audio file.
+    int or None: The BPM value calculated from the audio file, or None if processing fails.
     """
-    invalid_extensions = {'.m4b', '.m4a'}
-    file_extension = os.path.splitext(audio_file)[1].lower()
-    if file_extension in invalid_extensions:
-        logger.error(f"{audio_file} is invalid type: {file_extension}")
+    # Check file existence
+    if not os.path.exists(audio_file):
+        logger.error(f"File not found: {audio_file}")
         return None
+
     try:
-        y, sr = librosa.load(audio_file, duration=180)
-        if y.size == 0:
-            logger.error(f"Loaded audio data is empty for file: {audio_file}")
+        # Check if file is m4a and handle it with audioread
+        if audio_file.lower().endswith('.m4a'):
+            with audioread.audio_open(audio_file) as f:
+                y, sr = librosa.load(f)
+        else:
+            # Default loading for other formats
+            y, sr = librosa.load(audio_file, duration=180)
+
+        # Validate audio data
+        if y.size == 0 or sr == 0:
+            logger.error(f"Invalid audio data in file: {audio_file}")
             return None
+
+        # Calculate BPM
         bpm = librosa.beat.beat_track(y=y, sr=sr)[0]
         bpm = int(bpm)
         logger.info(f"Calculated BPM: {bpm} for {audio_file}")
         return bpm
+
     except sf.LibsndfileError as e:
-        logger.error(f"PySoundFile error: {e}")
+        logger.error(f"PySoundFile error processing {audio_file}: {str(e)}")
+        return None
+    except (UserWarning, FutureWarning) as w:
+        logger.warning(f"Warning processing {audio_file}: {str(w)}")
         return None
     except Exception as e:
-        logger.error(f"Error: {e}")
-        return None
-    except UserWarning as w:
-        logger.warning(f"User Warning: {w}")
-        return None
-    except FutureWarning as f:
-        logger.warning(f"Future Warning: {f}")
+        logger.error(f"Error processing {audio_file}: {str(e)}")
         return None

@@ -11,7 +11,7 @@ from time import sleep
 import analysis.lastfm as lastfm
 import pdb
 
-# TODO change databsae for production
+# TODO change database for production
 database = Database(DB_PATH, DB_USER, DB_PASSWORD, TEST_DB)
 
 
