@@ -1,4 +1,4 @@
-from . import WOODSTOCK_servername, musiclibrary, plex_password, plex_username
+from . import WOODSTOCK_servername, musiclibrary, plex_password, plex_username, TEST_SERVER, TEST_LIBRARY
 from plexapi.myplex import MyPlexAccount
 from datetime import datetime
 import sys
@@ -9,6 +9,8 @@ plex_username = plex_username
 plex_password = plex_password
 PLEX_SERVER = WOODSTOCK_servername
 MUSIC_LIBRARY = musiclibrary
+TEST_SERVER = TEST_SERVER
+TEST_LIBRARY = TEST_LIBRARY
 
 def plex_connect():
     """
@@ -19,11 +21,11 @@ def plex_connect():
     """
     account = MyPlexAccount(plex_username, plex_password)
     try:
-        server = account.resource(PLEX_SERVER).connect()
-        logger.info(f"Connected to Plex Server: {PLEX_SERVER}")
+        server = account.resource(TEST_SERVER).connect()
+        logger.info(f"Connected to Plex Server: {TEST_SERVER}")
         return server
     except Exception as e:
-        logger.error(f"Error connecting to Plex server {PLEX_SERVER}: {e}")
+        logger.error(f"Error connecting to Plex server {TEST_SERVER}: {e}")
         sys.exit()
 
 def get_music_library(server, library):

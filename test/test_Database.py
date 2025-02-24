@@ -93,7 +93,7 @@ def test_create_track_data_table(mock_connect, db):
 
     mock_connection.cursor().execute.assert_any_call('SET FOREIGN_KEY_CHECKS = 0')
     mock_connection.cursor().execute.assert_any_call('DROP TABLE IF EXISTS track_data')
-    mock_connection.cursor().execute.assert_any_call('CREATE TABLE IF NOT EXISTS track_data(\n        id INTEGER PRIMARY KEY AUTO_INCREMENT\n        , title VARCHAR (1000) NOT NULL\n        , artist VARCHAR (1000) NOT NULL\n        , album VARCHAR (1000) NOT NULL\n        , added_date VARCHAR (50)\n        , filepath VARCHAR (500)\n        , location VARCHAR (500)\n        , bpm INTEGER\n        , genre VARCHAR (1000)\n        , artist_id INTEGER\n        , woodstock_id INTEGER\n        , schroeder_id INTEGER\n        , FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE)')
+    mock_connection.cursor().execute.assert_any_call('CREATE TABLE IF NOT EXISTS track_data(\n        id INTEGER PRIMARY KEY AUTO_INCREMENT\n        , title VARCHAR (1000) NOT NULL\n        , artist VARCHAR (1000) NOT NULL\n        , album VARCHAR (1000) NOT NULL\n        , added_date VARCHAR (50)\n        , filepath VARCHAR (500)\n        , location VARCHAR (500)\n        , bpm INTEGER\n        , genre VARCHAR (1000)\n        , artist_id INTEGER\n        , Test_Server_id INTEGER\n        , schroeder_id INTEGER\n        , FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE)')
     mock_connection.cursor().execute.assert_any_call('CREATE INDEX ix_loc ON track_data (location)')
     mock_connection.cursor().execute.assert_any_call('CREATE INDEX ix_fileath on track_data (filepath)')
     mock_connection.cursor().execute.assert_any_call('CREATE INDEX ix_bpm on track_data (bpm)')

@@ -225,7 +225,7 @@ class Database:
         , bpm INTEGER
         , genre VARCHAR (1000)
         , artist_id INTEGER
-        , woodstock_id INTEGER
+        , Test_Server_id INTEGER
         , schroeder_id INTEGER
         , musicbrainz_id VARCHAR(255)
         , FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE)'''

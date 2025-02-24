@@ -12,7 +12,7 @@ database = Database(DB_PATH, DB_USER, DB_PASSWORD, TEST_DB)
 def insert_tracks(database: Database, csv_file):
     database.connect()
     query = """
-    INSERT INTO track_data (title, artist, album, genre, added_date, filepath, location, woodstock_id)
+    INSERT INTO track_data (title, artist, album, genre, added_date, filepath, location, Test_Server_id)
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """
     with open(csv_file, 'r') as f:
@@ -20,9 +20,9 @@ def insert_tracks(database: Database, csv_file):
         for row in reader:
             values = (row['title'], row['artist'], row['album'], row['genre'],
                       row['added_date'], row['filepath'], row['location'],
-                      row['woodstock_id'])
+                      row['Test_Server_id']) # TODO : make this dynamic
             database.execute_query(query, values)
-            logger.info(f"Inserted track record for {row['woodstock_id']}")
+            logger.info(f"Inserted track record for {row['Test_Server_id']}")
 
 
 
@@ -35,11 +35,11 @@ def get_id_location(database: Database, cutoff=None):
         cutoff: String representing the date to use as a cutoff for the query in 'mmddyyyy' format
 
     Returns:
-        list: List of tuples containing id, woodstock_id, and updated location
+        list: List of tuples containing id, Test_Server_id, and updated location
     """
     database.connect()
-    query_wo_cutoff = "SELECT id, woodstock_id, location FROM track_data"
-    query_w_cutoff = "SELECT id, woodstock_id, location FROM track_data WHERE added_date > %s"
+    query_wo_cutoff = "SELECT id, Test_Server_id, location FROM track_data"
+    query_w_cutoff = "SELECT id, Test_Server_id, location FROM track_data WHERE added_date > %s"
 
     if cutoff is None:
         results = database.execute_select_query(query_wo_cutoff)
@@ -65,7 +65,7 @@ def export_results(results: list, file_path: str = 'output/id_location.csv'):
     """
     with open(file_path, 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(['id', 'woodstock_id', 'location'])
+        writer.writerow(['id', 'Test_Server_id', 'location'])
         writer.writerows(results)
     logger.info(f"id_location results exported to {file_path}")
     return None
