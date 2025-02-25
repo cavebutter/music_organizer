@@ -5,6 +5,7 @@ import soundfile as sf
 import warnings
 import audioread
 import numpy as np
+import traceback
 
 # Suppress audioread deprecation warnings in stdout
 warnings.filterwarnings("ignore", category=DeprecationWarning, module='audioread')
@@ -53,4 +54,7 @@ def get_bpm(audio_file):
         return None
     except Exception as e:
         logger.error(f"Error processing {audio_file}: {str(e)}")
+        logger.debug(traceback.format_exc())
         return None
+
+

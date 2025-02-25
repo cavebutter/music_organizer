@@ -1,3 +1,5 @@
+from os import WCONTINUED
+
 from . import DB_PATH, DB_USER, DB_PASSWORD, DB_DATABASE, TEST_DB, DB_PORT
 from .database import Database
 import csv
@@ -12,20 +14,22 @@ database = Database(DB_PATH, DB_USER, DB_PASSWORD, TEST_DB)
 def insert_tracks(database: Database, csv_file):
     database.connect()
     query = """
-    INSERT INTO track_data (title, artist, album, genre, added_date, filepath, location, Test_Server_id)
+    INSERT INTO track_data (title, artist, album, genre, added_date, filepath, location, plex_id)
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """
     with open(csv_file, 'r') as f:
         reader = csv.DictReader(f)
         for row in reader:
-            values = (row['title'], row['artist'], row['album'], row['genre'],
-                      row['added_date'], row['filepath'], row['location'],
-                      row['Test_Server_id']) # TODO : make this dynamic
-            database.execute_query(query, values)
-            logger.info(f"Inserted track record for {row['Test_Server_id']}")
-
-
-
+            try:
+                values = (row['title'], row['artist'], row['album'], row['genre'],
+                                              row['added_date'], row['filepath'], row['location'],
+                                              row['plex_id']) # TODO : make this dynamic
+                database.execute_query(query, values)
+                logger.info(f"Inserted track record for {row['plex_id']}")
+            except Exception as e:
+                logger.error(f"Error inserting track record: {e}")
+                logger.debug(e)
+                continue
 
 def get_id_location(database: Database, cutoff=None):
     """
@@ -38,8 +42,8 @@ def get_id_location(database: Database, cutoff=None):
         list: List of tuples containing id, Test_Server_id, and updated location
     """
     database.connect()
-    query_wo_cutoff = "SELECT id, Test_Server_id, location FROM track_data"
-    query_w_cutoff = "SELECT id, Test_Server_id, location FROM track_data WHERE added_date > %s"
+    query_wo_cutoff = "SELECT id, plex_id, location FROM track_data"
+    query_w_cutoff = "SELECT id, plex_id, location FROM track_data WHERE added_date > %s"
 
     if cutoff is None:
         results = database.execute_select_query(query_wo_cutoff)
@@ -65,7 +69,7 @@ def export_results(results: list, file_path: str = 'output/id_location.csv'):
     """
     with open(file_path, 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(['id', 'Test_Server_id', 'location'])
+        writer.writerow(['id', 'plex_id', 'location'])
         writer.writerows(results)
     logger.info(f"id_location results exported to {file_path}")
     return None

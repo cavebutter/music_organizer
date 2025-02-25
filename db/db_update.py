@@ -15,13 +15,15 @@ import pdb
 database = Database(DB_PATH, DB_USER, DB_PASSWORD, TEST_DB)
 
 
-def process_bpm(database: Database, track_list: csv):
+def process_bpm(database: Database, track_list: csv, location_prefix: str):
     """
     Process the BPM for each track in the track list and update the 'bpm' field in the database.
+
 
     Parameters:
     database (Database): The database connection object.
     track_list (csv): The list of tracks to process BPM for.
+    location_prefix (str): The prefix to prepend to the file location. Must include trailing slash.
 
     Returns:
     None
@@ -37,11 +39,11 @@ def process_bpm(database: Database, track_list: csv):
         reader = csv.DictReader(f)
         i = 1
         for row in reader:
-            file_location = '/mnt/triton/' + row['location'].replace('Music/', 'music/')
+            file_location = location_prefix + row['location']
             # Above only applies to Neptune server. Change as needed.
             track_bpm = bpm.get_bpm(file_location)
             database.execute_query("UPDATE track_data SET bpm = %s WHERE id = %s", (track_bpm, row['id']))
-            logger.info(f"Processed BPM for {row['Test_Server_id']}; {i} of {lib_size}")
+            logger.info(f"Processed BPM for {row['plex_id']}; {i} of {lib_size}")
             i += 1
     database.close()
 

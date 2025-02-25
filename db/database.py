@@ -208,12 +208,14 @@ class Database:
 
         Parameters
         ----------
+        plex_server : str
+            the name of the Plex server
         table_name : str, optional
             the name of the table to create (default is "track_data")
         """
         self.execute_query("SET FOREIGN_KEY_CHECKS = 0")
         self.drop_table("track_data")
-        track_data_ddl = '''
+        track_data_ddl = f'''
         CREATE TABLE IF NOT EXISTS track_data(
         id INTEGER PRIMARY KEY AUTO_INCREMENT
         , title VARCHAR (1000) NOT NULL
@@ -225,8 +227,7 @@ class Database:
         , bpm INTEGER
         , genre VARCHAR (1000)
         , artist_id INTEGER
-        , Test_Server_id INTEGER
-        , schroeder_id INTEGER
+        , plex_id INTEGER
         , musicbrainz_id VARCHAR(255)
         , FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE)'''
         self.create_table(track_data_ddl)

@@ -75,17 +75,15 @@ def get_all_tracks_limit(music_library, limit=50):
         sys.exit()
 
 
-def extract_track_data(track, server_name: str, filepath_prefix: str):
+def extract_track_data(track, filepath_prefix: str):
    #  TODO: This does not handle Various Artist albums well. Need to fix this.
     """
     Extract Plex track data from a track object. Return a dict with selected data
     along with a server_id for ratingKey and a stripped filepath.
     :param track: Plex track object
-    :param server_name: string used to create server_id key
     :param filepath_prefix: string to be stripped from the location[0] field
     :return:
     """
-    server_id = server_name + '_id'
     genre_list = []
     for genre in track.genres:
         genre_list.append(genre.tag)
@@ -106,12 +104,12 @@ def extract_track_data(track, server_name: str, filepath_prefix: str):
         'added_date': added_date,
         'filepath': filepath,
         'location': stripped_location,
-        server_id: int(track.ratingKey)
+        'plex_id': int(track.ratingKey)
     }
     return track_data
 
 
-def listify_track_data(tracks, server_name: str, filepath_prefix: str):
+def listify_track_data(tracks, filepath_prefix: str):
     """
     Lists the track data from the provided list of tracks.
 
@@ -125,7 +123,7 @@ def listify_track_data(tracks, server_name: str, filepath_prefix: str):
     lib_size = len(tracks)
     i = 1
     for track in tracks:
-        track_data = extract_track_data(track, server_name, filepath_prefix)
+        track_data = extract_track_data(track, filepath_prefix)
         track_list.append(track_data)
         logger.debug(f"Added {track.title} - {track.ratingKey}. {i} of {lib_size}")
         i += 1
@@ -133,7 +131,7 @@ def listify_track_data(tracks, server_name: str, filepath_prefix: str):
     return track_list
 
 
-def export_track_data(track_data, filename, server_name: str):
+def export_track_data(track_data, filename):
     """
     Exports the track data to a CSV file.
 
@@ -143,10 +141,9 @@ def export_track_data(track_data, filename, server_name: str):
     Returns:
     None
     """
-    server_id = server_name + '_id'
     with open(filename, 'a') as csvfile:
         fieldnames = ['title', 'artist', 'album', 'genre', 'added_date', 'filepath',
-                      'location', server_id]
+                      'location', 'plex_id']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for element in track_data:
