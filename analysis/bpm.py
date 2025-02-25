@@ -58,3 +58,12 @@ def get_bpm(audio_file):
         return None
 
 
+def bpm_cleanup():
+    """
+    For use after initial setup or after update from Plex.
+    Query db to get id, plex_id, and location for all tracks that are filetype '.m4a' and have no BPM.
+    Make a copy of the file, convert to .wav, get BPM, update db, delete .wav file.
+    Returns:
+
+    """
+    pass

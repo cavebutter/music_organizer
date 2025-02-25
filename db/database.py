@@ -138,7 +138,7 @@ class Database:
             cursor.close()
         except mysql.connector.Error as error:
             logger.error(f"Error executing query: {error}")
-            sys.exit()
+            # sys.exit()
 
     def execute_select_query(self, query, params=None):
         """
