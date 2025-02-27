@@ -15,13 +15,6 @@ def configure_logging():
 if __name__ == '__main__':
     configure_logging()
 
-    # Connect to Plex server and get music library
-    server = p.plex_connect()  # Connect to TEST_SERVER
-    library = p.get_music_library(server, p.TEST_LIBRARY) # Get TEST_LIBRARY
-    tracks, lib_size = p.get_all_tracks_limit(library)
-    track_list = p.listify_track_data(tracks,'/mnt/hdd/')
-    p.export_track_data(track_list, 'output/e2e_test_track_data.csv')
-
     db = dbu.database
     db.connect()
 
@@ -30,6 +23,15 @@ if __name__ == '__main__':
 
     # Create tables
     db.create_all_tables()
+
+    # Connect to Plex server and get music library
+    server = p.plex_connect()  # Connect to TEST_SERVER
+    library = p.get_music_library(server, p.TEST_LIBRARY) # Get TEST_LIBRARY
+    tracks, lib_size = p.get_all_tracks_limit(library)
+    track_list = p.listify_track_data(tracks,'/mnt/hdd/')
+    p.export_track_data(track_list, 'output/e2e_test_track_data.csv')
+
+
 
     # Populate test db
     dbf.insert_tracks(dbf.database, 'output/e2e_test_track_data.csv')
@@ -49,7 +51,7 @@ if __name__ == '__main__':
     # Get last.fm track data
     tracks = lfm.get_track_list_from_db(db)
     for track in tracks:
-        sleep(2)
+        sleep(.5)
         dbu.insert_lastfm_track_data(db, track)
 
     # get bpm data
@@ -57,3 +59,5 @@ if __name__ == '__main__':
     dbf.export_results(ids_locations, 'output/e2e_test_id_location.csv')
     dbu.process_bpm(db, 'output/e2e_test_id_location.csv', "/mnt/hdd/")
 
+    # Update history
+    dbf.update_history(db, lib_size)

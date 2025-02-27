@@ -209,7 +209,7 @@ def insert_last_fm_artist_data(database: Database):
 
         for artist_id, artist_name in artists:
             try:
-                sleep(5)  # Rate limiting
+                sleep(1)  # Rate limiting
                 artist_info = lastfm.get_artist_info(artist_name)
                 if not artist_info:
                     logger.error(f"Failed to retrieve artist info for {artist_name}")

@@ -254,8 +254,9 @@ class Database:
         history_ddl = '''
         CREATE TABLE IF NOT EXISTS history(
         id INTEGER PRIMARY KEY AUTO_INCREMENT
-        , tx_date VARCHAR (255)
-        , records INTEGER (6))'''
+        , tx_date DATE
+        , records INTEGER (6)
+        , latest_entry DATE)'''
         self.create_table(history_ddl)
         self.execute_query("SET FOREIGN_KEY_CHECKS = 1")
 

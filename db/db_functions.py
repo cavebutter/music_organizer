@@ -139,3 +139,30 @@ def get_last_update_date(database: Database):
     result = database.execute_select_query(query)
     result = result[0][0]
     return result
+
+
+def get_latest_added_date(database: Database):
+    database.connect()
+    query = "SELECT MAX(added_date) FROM track_data"
+    result = database.execute_select_query(query)
+    result = result[0][0]
+    return result
+
+
+
+def update_history(database: Database, import_size: int):
+    """
+    Update the history table with the date of the last update, the number of records added, and the date of the last library update.
+    Args:
+        database:
+
+    Returns:
+
+    """
+    database.connect()
+    max_date = get_latest_added_date(database)
+    today = datetime.datetime.now().strftime('%Y-%m-%d')
+    query = """
+    INSERT INTO history (tx_date, records, latest_entry) VALUES (%s, %s, %s)
+    """
+    database.execute_query(query, (today, import_size, max_date))
